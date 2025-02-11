@@ -1,36 +1,29 @@
-import React, { useEffect, useState } from 'react';
-import { connectWebSocket, disconnectWebSocket } from './Components/WebSocket';
+import { useState } from 'react';
+import WebSocketConnection from './Components/WebSocket';
 import DataVisualizer from './Components/DataVisualization';
 
 function App() {
-  const [data, setData] = useState(null);
-  const [isPaused, setIsPaused] = useState(false);
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const handleData = (receivedData) => {
-      if (!isPaused) {
-        setData(receivedData);
-      }
-    };
+  const handleDataReceived = (newData) => {
+    setData((prevData) => [...prevData, ...newData]);
+    setLoading(false);
+  };
 
-    connectWebSocket(handleData);
-
-    return () => {
-      disconnectWebSocket();
-    };
-  }, [isPaused]);
+  const handleError = (errMessage) => {
+    setError(errMessage);
+    setLoading(false);
+  };
 
   return (
     <div className="App">
-      <h1>Real-Time Data Visualization</h1>
-      {data ? (
-        <DataVisualizer data={data} />
-      ) : (
-        <p>Loading data...</p>
-      )}
-      <button onClick={() => setIsPaused(!isPaused)}>
-        {isPaused ? 'Resume Updates' : 'Pause Updates'}
-      </button>
+      <h1>Real-Time WebSocket Data</h1>
+      {loading && <p>Loading data...</p>}
+      {error && <p style={{ color: 'red' }}>Error: {error}</p>}
+      <WebSocketConnection onDataReceived={handleDataReceived} onError={handleError} />
+      <DataVisualizer data={data} />
     </div>
   );
 }
